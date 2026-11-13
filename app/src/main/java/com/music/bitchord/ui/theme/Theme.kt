@@ -23,28 +23,33 @@ import com.music.bitchord.data.settings.AppFont
 // spots (Replay's rank badge) that want that specific red regardless of theme.
 val AccentRed = Color(0xFFFA2D48)
 
+// Sonara's "Aurora" (dark) and "Daylight" (light) palettes, from the Sonara source.
 private val DarkColors = darkColorScheme(
-    primary = Color.White,
-    onPrimary = Color.Black,
-    background = Color.Black,
-    onBackground = Color.White,
-    surface = Color(0xFF0D0D0F),
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF1C1C1E),
-    onSurfaceVariant = Color(0xFF8E8E93),
-    outline = Color(0xFF2C2C2E),
+    primary = Color(0xFF8B5CF6),
+    onPrimary = Color.White,
+    secondary = Color(0xFFEC4899),
+    onSecondary = Color.White,
+    background = Color(0xFF0B0B12),
+    onBackground = Color(0xFFF3F3F9),
+    surface = Color(0xFF14141D),
+    onSurface = Color(0xFFF3F3F9),
+    surfaceVariant = Color(0xFF1C1C28),
+    onSurfaceVariant = Color(0xFF9B9BB3),
+    outline = Color(0xFF272736),
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color.Black,
+    primary = Color(0xFF6366F1),
     onPrimary = Color.White,
-    background = Color.White,
-    onBackground = Color.Black,
-    surface = Color(0xFFF7F7F9),
-    onSurface = Color.Black,
-    surfaceVariant = Color(0xFFF2F2F7),
-    onSurfaceVariant = Color(0xFF6E6E73),
-    outline = Color(0xFFE5E5EA),
+    secondary = Color(0xFFEC4899),
+    onSecondary = Color.White,
+    background = Color(0xFFF3F4FA),
+    onBackground = Color(0xFF16161F),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF16161F),
+    surfaceVariant = Color(0xFFE1E3EE),
+    onSurfaceVariant = Color(0xFF6A6A82),
+    outline = Color(0xFFE1E3EE),
 )
 
 /**

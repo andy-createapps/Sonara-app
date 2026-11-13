@@ -24,7 +24,8 @@ import kotlin.math.abs
  */
 object LrcLib {
 
-    private const val BASE = "https://lrclib.net/api"
+    private val BASE: String
+        get() = com.music.bitchord.data.ProviderConfig.get("lyrics.lrclibBase", "https://lrclib.net/api")
     private const val AGENT = "BitChord (https://github.com/bitchord)"
 
     private val json = Json { ignoreUnknownKeys = true }

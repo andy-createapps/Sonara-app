@@ -12,7 +12,6 @@ import com.music.bitchord.auth.profileId
 import com.music.bitchord.auth.sessionId
 import com.music.bitchord.auth.adjacentProfile
 import com.music.bitchord.data.AppUpdateChecker
-import com.music.bitchord.sonara.Eggs
 import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.LikeState
 import com.music.bitchord.data.YtMusicRepository
@@ -1513,6 +1512,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             // A leftover APK only means "Install Now" for the session that
             // downloaded it — see AppUpdateChecker.clearCache.
+            com.music.bitchord.sonara.ProviderUpdates.loadSaved(getApplication())
             AppUpdateChecker.clearCache(getApplication())
             // Sonara does not check for whole-app updates on its own. Parts that
             // go stale (sources, extractor, lyrics) are checked one by one from
@@ -2152,7 +2152,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun submitSearch() {
         val q = _query.value.trim()
         if (q.isEmpty() || _searchSource.value == SearchSource.LIBRARY) return
-        Eggs.forSearch(q)?.let { Eggs.events.tryEmit(it) }
         searchSubmitted = true
         _suggestions.value = emptyList()
         _typeaheadResults.value = emptyList()

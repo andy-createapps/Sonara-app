@@ -57,13 +57,16 @@ object SpotifyLibrary {
     var auth: Auth? = null
 
     private const val GQL = "https://api-partner.spotify.com/pathfinder/v2/query"
-    private const val LIBRARY = "973e511ca44261fda7eebac8b653155e7caee3675abb4fb110cc1b8c78b091c3"
-    private const val PLAYLIST = "346811f856fb0b7e4f6c59f8ebea78dd081c6e2fb01b77c954b26259d5fc6763"
+    private val LIBRARY: String
+        get() = com.music.bitchord.data.ProviderConfig.get("spotify.libraryHash", "973e511ca44261fda7eebac8b653155e7caee3675abb4fb110cc1b8c78b091c3")
+    private val PLAYLIST: String
+        get() = com.music.bitchord.data.ProviderConfig.get("spotify.playlistHash", "346811f856fb0b7e4f6c59f8ebea78dd081c6e2fb01b77c954b26259d5fc6763")
     /** The pseudo-playlist id for the Liked Songs collection, which has no playlist uri. */
     const val LIKED_ID = "liked"
     /** Spotify's own Liked Songs artwork, the purple heart; the collection has no cover of its own. */
     private const val LIKED_COVER = "https://misc.scdn.co/liked-songs/liked-songs-640.png"
-    private const val LIKED = "087278b20b743578a6262c2b0b4bcd20d879c503cc359a2285baf083ef944240"
+    private val LIKED: String
+        get() = com.music.bitchord.data.ProviderConfig.get("spotify.likedHash", "087278b20b743578a6262c2b0b4bcd20d879c503cc359a2285baf083ef944240")
     /** The phone's canvas client sent this one; kept so its requests look unchanged. */
     private const val USER_AGENT =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +

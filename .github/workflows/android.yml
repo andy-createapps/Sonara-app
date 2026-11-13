@@ -1,4 +1,7 @@
-name: Build Sonara APKs
+name: Build Sonara APK
+
+permissions:
+  contents: write
 
 on:
   push:
@@ -21,10 +24,13 @@ jobs:
         cache: gradle
 
     - name: Accept Android SDK licenses
+      # The build machine already has the Android SDK; this only records the license
+      # acceptance so Gradle may download any extra pieces it needs.
       run: |
         sudo mkdir -p "$ANDROID_HOME/licenses"
         printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n' | sudo tee "$ANDROID_HOME/licenses/android-sdk-license" > /dev/null
         printf '\n84831b9409646a918e30573bab4c9c91346d8abd\n' | sudo tee "$ANDROID_HOME/licenses/android-sdk-preview-license" > /dev/null
+        echo "ANDROID_HOME=$ANDROID_HOME"
 
     - name: Fetch the two large model files from the original project
       # Unchanged files from BitChord (GPLv3), left out of the upload to keep it small.
@@ -46,6 +52,12 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
+        if [ -z "$KEYSTORE_BASE64" ] && [ -f signing/sonara-key.b64 ]; then
+          # The fixed Sonara key kept in the repo: every build is signed the same way,
+          # which is what lets the in-app updater install new versions over old ones.
+          KEYSTORE_BASE64="$(cat signing/sonara-key.b64)"
+          KEYSTORE_PASSWORD="$(cat signing/sonara-key.pass)"; KEY_ALIAS="sonara"; KEY_PASSWORD="$KEYSTORE_PASSWORD"
+        fi
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "$KEYSTORE_BASE64" | base64 -d > sonara-release.jks
           STORE_PASS="$KEYSTORE_PASSWORD"; ALIAS="$KEY_ALIAS"; KEY_PASS="$KEY_PASSWORD"
@@ -66,25 +78,24 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
-    - name: Build Andy's version
-      run: ./gradlew assembleProdRelease -Pedition=andy
+    - name: Build Sonara
+      run: ./gradlew assembleProdRelease -PsonaraBuild=${{ github.run_number }}
 
-    - name: Collect Andy's APK
+    - name: Collect the APK
       run: |
         mkdir -p out
-        cp app/build/outputs/apk/prod/release/*universal*.apk out/Sonara-Andy.apk 2>/dev/null \
-          || cp "$(ls app/build/outputs/apk/prod/release/*.apk | head -n 1)" out/Sonara-Andy.apk
-
-    - name: Build Camellia's version
-      run: ./gradlew assembleProdRelease -Pedition=camellia
-
-    - name: Collect Camellia's APK
-      run: |
-        cp app/build/outputs/apk/prod/release/*universal*.apk out/Sonara-Camellia.apk 2>/dev/null \
-          || cp "$(ls app/build/outputs/apk/prod/release/*.apk | head -n 1)" out/Sonara-Camellia.apk
+        cp app/build/outputs/apk/prod/release/*universal*.apk out/Sonara.apk 2>/dev/null \
+          || cp "$(ls app/build/outputs/apk/prod/release/*.apk | head -n 1)" out/Sonara.apk
 
     - name: Upload APKs
       uses: actions/upload-artifact@v4
       with:
         name: sonara-apks
         path: out/*.apk
+
+    - name: Publish release (the in-app updater reads this)
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Sonara 1.0.${{ github.run_number }}
+        files: out/*.apk

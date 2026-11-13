@@ -9,16 +9,9 @@ Sonara is free software under the **GNU General Public License v3.0**. See `LICE
 The original copyright notices stay in the source files. Anyone who receives a Sonara APK
 can ask for this source code and may pass it on under the same license.
 
-## Two builds
+## One app
 
-The same code makes two apps, chosen with a Gradle property:
-
-| Build | Command | App id |
-| --- | --- | --- |
-| Andy's | `./gradlew assembleProdRelease -Pedition=andy` | `com.sonara.app` |
-| Camellia's | `./gradlew assembleProdRelease -Pedition=camellia` | `com.sonara.app.c` |
-
-They have different app ids, so both can be installed on one phone.
+Sonara is one app (`com.sonara.app`): `./gradlew assembleProdRelease`.
 
 ## Building on GitHub
 

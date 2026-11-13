@@ -1,5 +1,18 @@
 package com.music.bitchord.ui.screens
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.Crossfade
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import com.music.bitchord.ui.components.trackArtSize
 import com.music.bitchord.ui.components.contextClick
 import com.music.bitchord.ui.AppUi
@@ -126,6 +139,10 @@ fun HomeScreen(
     festiveLogo: Boolean = false,
     /** Tapping the festive wordmark, e.g. to bring its greeting back. */
     onFestiveLogoClick: (() -> Unit)? = null,
+    /** A small line under the wordmark, e.g. one of the rotating tips. */
+    tagline: String? = null,
+    /** Tapping the wordmark. */
+    onLogoClick: (() -> Unit)? = null,
     signedIn: Boolean = true,
     onSignIn: (() -> Unit)? = null,
     /**
@@ -190,7 +207,7 @@ fun HomeScreen(
             },
         ) {
             if (title != null) {
-                item { HomeTitle(title, festiveLogo = festiveLogo, onFestiveLogoClick = onFestiveLogoClick) }
+                item { HomeTitle(title, festiveLogo = festiveLogo, onFestiveLogoClick = onFestiveLogoClick, tagline = tagline, onLogoClick = onLogoClick) }
             }
             if (!signedIn && onSignIn != null) {
                 item {
@@ -467,34 +484,78 @@ private fun HomeTitle(
     modifier: Modifier = Modifier,
     festiveLogo: Boolean = false,
     onFestiveLogoClick: (() -> Unit)? = null,
+    tagline: String? = null,
+    onLogoClick: (() -> Unit)? = null,
 ) {
-    val style = MaterialTheme.typography.displayLarge
-    val logoHeight = with(LocalDensity.current) { (style.fontSize * LOGO_TO_FONT).toDp() }
+    // Sonara's own wordmark: the bars mark and the name. The festive gold variant
+    // of the old wordmark is not used, so [festiveLogo] and [title] are accepted
+    // for the callers that still pass them and otherwise ignored.
+    val markSize = 40.dp
+    var spins by remember { mutableFloatStateOf(0f) }
+    val rotation by animateFloatAsState(targetValue = spins, animationSpec = tween(700), label = "sonara-logo-spin")
     Column(modifier = modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp)) {
-        val logoModifier = Modifier
-            .padding(bottom = 14.dp)
-            .height(logoHeight)
-            .aspectRatio(LOGO_ASPECT)
-        if (festiveLogo) {
-            GoldenLogo(
-                painter = painterResource(Res.drawable.ic_logo),
-                modifier = logoModifier,
-                onClick = onFestiveLogoClick,
-            )
-        } else {
-            Icon(
-                painter = painterResource(Res.drawable.ic_logo),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = logoModifier,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(bottom = if (tagline != null) 4.dp else 14.dp)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                    spins += 360f
+                    onLogoClick?.invoke()
+                },
+        ) {
+            SonaraMark(size = markSize, modifier = Modifier.graphicsLayer { rotationZ = rotation })
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = "Sonara",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.W800,
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
-        // "Listen now" is hidden for now; the wordmark above stays.
-        // Text(
-        //     text = title,
-        //     style = style,
-        //     color = MaterialTheme.colorScheme.onBackground,
-        // )
+        if (tagline != null) {
+            Crossfade(targetState = tagline, animationSpec = tween(600), label = "sonara-tip") { tip ->
+                Text(
+                    text = tip,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = markSize + 12.dp, bottom = 14.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The four rounded bars of the Sonara logo, on the app's accent gradient. */
+@Composable
+private fun SonaraMark(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val gradient = Brush.linearGradient(
+        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary),
+    )
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(size * 0.3f))
+            .background(gradient),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(size * 0.62f)) {
+            val k = this.size.width / 24f
+            // x, y, width, height on a 24-unit grid, as in the source's logo icon.
+            val bars = listOf(
+                floatArrayOf(3f, 9f, 3f, 6f),
+                floatArrayOf(7.5f, 5f, 3f, 14f),
+                floatArrayOf(12f, 2.5f, 3f, 19f),
+                floatArrayOf(16.5f, 6.5f, 3f, 11f),
+            )
+            for (bar in bars) {
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset((bar[0] + 0.75f) * k, bar[1] * k),
+                    size = Size(bar[2] * k, bar[3] * k),
+                    cornerRadius = CornerRadius(1.5f * k),
+                )
+            }
+        }
     }
 }
 

@@ -95,6 +95,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -202,10 +203,8 @@ import com.music.bitchord.playback.QueueCoordinator
 import com.music.bitchord.playback.QueueCoordinator.asQueueEntry
 import com.music.bitchord.playback.QueueShuffle
 import com.music.bitchord.playback.QueueSource
-import com.music.bitchord.sonara.CamelliaWelcome
-import com.music.bitchord.sonara.CamelliaWelcomePrefs
-import com.music.bitchord.sonara.EggDialog
-import com.music.bitchord.sonara.Eggs
+import com.music.bitchord.sonara.SonaraIntro
+import com.music.bitchord.sonara.SonaraWelcome
 import com.music.bitchord.playback.cast.CastController
 import com.music.bitchord.data.model.QueueTier
 import com.music.bitchord.playback.autoplayEnabledFor
@@ -810,6 +809,33 @@ private fun BitChordApp(
     // left open past it lets the gold go.
     val diwaliFestive = remember(appForeground) {
         DiwaliGate.isIndianTimezone() && DiwaliGate.isDiwaliDay()
+    }
+    // The welcome intro: which mode this app start gets (null = none), counted once per start.
+    var introMode by rememberSaveable { mutableStateOf(SonaraWelcome.modeForThisLaunch(context)) }
+    // The tips under the logo on the home feed, and the seven taps that replay the intro.
+    val homeTips = remember { SonaraWelcome.tips }
+    var homeTipIndex by rememberSaveable { mutableIntStateOf((homeTips.indices).random()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(7000)
+            homeTipIndex = (homeTipIndex + 1) % homeTips.size
+        }
+    }
+    var logoTaps by remember { mutableIntStateOf(0) }
+    var lastLogoTap by remember { mutableLongStateOf(0L) }
+    val onHomeLogoTap: () -> Unit = {
+        val now = System.currentTimeMillis()
+        logoTaps = if (now - lastLogoTap > 4000L) 1 else logoTaps + 1
+        lastLogoTap = now
+        when {
+            logoTaps == 3 -> Toast.makeText(context, "Keep going…", Toast.LENGTH_SHORT).show()
+            logoTaps == 5 -> Toast.makeText(context, "Andy Morgan is watching 👀", Toast.LENGTH_SHORT).show()
+            logoTaps >= 7 -> {
+                logoTaps = 0
+                Toast.makeText(context, "You found it. Roll the intro!", Toast.LENGTH_SHORT).show()
+                introMode = "run"
+            }
+        }
     }
     var showDiwali by rememberSaveable { mutableStateOf(false) }
     var diwaliAutoShown by rememberSaveable { mutableStateOf(false) }
@@ -3388,6 +3414,8 @@ private fun BitChordApp(
                                 title = stringResource(R.string.listen_now),
                                 festiveLogo = diwaliFestive,
                                 onFestiveLogoClick = { showDiwali = true },
+                                tagline = homeTips[homeTipIndex % homeTips.size],
+                                onLogoClick = onHomeLogoTap,
                                 signedIn = signedIn,
                                 onSignIn = { webSession = WebSessionMode.SIGN_IN },
                                 onItemClick = { item, shelfTitle ->
@@ -5324,36 +5352,9 @@ private fun BitChordApp(
             )
         }
 
-        // ---- Camellia build only: the welcome quiz, with the song under it ----
-        var camelliaWelcome by remember { mutableStateOf(CamelliaWelcomePrefs.isPending(context)) }
-        var welcomeSongRequested by remember { mutableStateOf(false) }
-        LaunchedEffect(welcomeSongRequested, controller) {
-            if (!welcomeSongRequested || controller == null) return@LaunchedEffect
-            welcomeSongRequested = false
-            val found = YtMusicRepository.search("Dracula Jennie remix", SearchFilter.SONGS).getOrNull().orEmpty()
-                .ifEmpty { YtMusicRepository.search("Dracula Jennie remix", SearchFilter.ALL).getOrNull().orEmpty() }
-            val songs = found.mapNotNull {
-                when (it) {
-                    is SearchResult.TopTrack -> it.song
-                    is SearchResult.Track -> it.song
-                    else -> null
-                }
-            }
-            val pick = songs.firstOrNull {
-                it.title.contains("dracula", ignoreCase = true) &&
-                    (it.title.contains("jennie", ignoreCase = true) || it.artist.contains("jennie", ignoreCase = true))
-            } ?: songs.firstOrNull { it.title.contains("dracula", ignoreCase = true) } ?: songs.firstOrNull()
-            if (pick != null) playFrom(listOf(pick), 0, QueueSource("Sonara", PlaybackSourceType.SEARCH))
-        }
-        if (camelliaWelcome) {
-            CamelliaWelcome(
-                onStartMusic = { welcomeSongRequested = true },
-                onFinished = { camelliaWelcome = false },
-            )
-        }
-        var egg by remember { mutableStateOf<Eggs.Egg?>(null) }
-        LaunchedEffect(Unit) { Eggs.events.collect { egg = it } }
-        egg?.let { EggDialog(it) { egg = null } }
+        // ---- The welcome intro (see SonaraWelcome): full screen over everything ----
+        LaunchedEffect(introMode) { if (introMode != null) controller?.pause() }
+        introMode?.let { mode -> SonaraIntro(mode = mode, onClose = { introMode = null }) }
 
         // ---- Google sign-in (full screen WebView) ----
         webSession?.let { mode ->

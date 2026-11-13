@@ -48,8 +48,8 @@ object SpotifyCanvas {
     private const val PATHFINDER_URL = "https://api-partner.spotify.com/pathfinder/v1/query"
 
     /** The persisted query id for the web player's own track search. */
-    private const val PATHFINDER_SEARCH_HASH =
-        "bc1ca2fcd0ba1013a0fc88e6cc4f190af501851e3dafd3e1ef85840297694428"
+    private val PATHFINDER_SEARCH_HASH: String
+        get() = com.music.bitchord.data.ProviderConfig.get("spotify.searchHash", "bc1ca2fcd0ba1013a0fc88e6cc4f190af501851e3dafd3e1ef85840297694428")
 
     /**
      * spclient gates this path to Spotify's own apps by user agent; the web

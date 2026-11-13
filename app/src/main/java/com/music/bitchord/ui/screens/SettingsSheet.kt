@@ -18,7 +18,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -99,7 +98,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -1791,8 +1789,6 @@ fun SettingsScreen(
         // the whole list, so it goes when the list is narrowed to a few rows.
         if (section == null && searchQuery.isBlank()) {
         com.music.bitchord.sonara.ComponentUpdateRows()
-        var logoTaps by remember { mutableIntStateOf(0) }
-        var lastLogoTap by remember { mutableStateOf(0L) }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1804,20 +1800,7 @@ fun SettingsScreen(
                 contentDescription = null,
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    ) {
-                        if (!com.music.bitchord.sonara.Edition.isCamellia) return@clickable
-                        val now = System.currentTimeMillis()
-                        logoTaps = if (now - lastLogoTap > 2000L) 1 else logoTaps + 1
-                        lastLogoTap = now
-                        if (logoTaps >= 7) {
-                            logoTaps = 0
-                            com.music.bitchord.sonara.Eggs.events.tryEmit(com.music.bitchord.sonara.Eggs.LOGO)
-                        }
-                    },
+                    .clip(RoundedCornerShape(12.dp)),
             )
         }
         Text(

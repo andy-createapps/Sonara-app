@@ -34,7 +34,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  */
 object BiniLyrics {
 
-    private const val BASE = "https://lyrics-api.binimum.org/"
+    private val BASE: String
+        get() = com.music.bitchord.data.ProviderConfig.get("lyrics.biniBase", "https://lyrics-api.binimum.org/")
 
     /** Lyrics, and the ISRC of the recording they were matched to. */
     data class Match(val isrc: String?, val lines: List<LyricLine>)

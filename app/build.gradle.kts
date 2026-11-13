@@ -68,7 +68,7 @@ val addonAuthServer: String = (
 // Two builds come out of this one project: "andy" (the plain app) and
 // "camellia" (adds the welcome quiz and the hidden bits). Picked with
 // -Pedition=camellia; each has its own application id so both can be installed.
-val edition: String = (project.findProperty("edition") as String?)?.trim()?.lowercase() ?: "andy"
+val edition: String = (project.findProperty("edition") as String?)?.trim()?.lowercase() ?: "camellia"
 
 // See the root build.gradle.kts: one version for the phone and its watch app.
 val betaSuffix = rootProject.extra["bitchordBetaSuffix"] as String
@@ -79,7 +79,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = if (edition == "camellia") "com.sonara.app.c" else "com.sonara.app"
+        applicationId = "com.sonara.app"
         // 26 keeps reach wide; real-time blur (RenderEffect) kicks in on API 31+,
         // Haze falls back to a translucent scrim below that.
         minSdk = 26
@@ -105,7 +105,7 @@ android {
         // Which release assets are this app's: the phone and TV APKs ship in
         // the same GitHub release, told apart by file name. See
         // AppUpdateChecker.apkAssetUrl.
-        buildConfigField("String", "UPDATE_APK_PREFIX", "\"Sonara-\"")
+        buildConfigField("String", "UPDATE_APK_PREFIX", "\"Sonara\"")
         buildConfigField("String", "EDITION", "\"$edition\"")
     }
 

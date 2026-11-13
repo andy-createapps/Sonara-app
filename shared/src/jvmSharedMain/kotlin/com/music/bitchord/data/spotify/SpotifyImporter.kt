@@ -181,7 +181,8 @@ object SpotifyImporter {
     private const val EMBED_TRACK_LIMIT = 100
     private const val PAGE_SIZE = 100
     private const val PATHFINDER_URL = "https://api-partner.spotify.com/pathfinder/v1/query"
-    private const val FETCH_PLAYLIST_HASH = "19ff1327c29e99c208c86d7a9d8f1929cfdf3d3202a0ff4253c821f1901aa94d"
+    private val FETCH_PLAYLIST_HASH: String
+        get() = com.music.bitchord.data.ProviderConfig.get("spotify.fetchPlaylistHash", "19ff1327c29e99c208c86d7a9d8f1929cfdf3d3202a0ff4253c821f1901aa94d")
 
     /** Tracks from [start] to the end of the playlist, a page at a time. */
     private fun fetchRemainingTracks(
