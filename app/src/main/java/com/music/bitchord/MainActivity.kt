@@ -832,8 +832,8 @@ private fun BitChordApp(
             logoTaps == 5 -> Toast.makeText(context, "Andy Morgan is watching 👀", Toast.LENGTH_SHORT).show()
             logoTaps >= 7 -> {
                 logoTaps = 0
-                Toast.makeText(context, "You found it. Roll the intro!", Toast.LENGTH_SHORT).show()
-                introMode = "run"
+                Toast.makeText(context, "You found it 🥚", Toast.LENGTH_SHORT).show()
+                introMode = "egg"
             }
         }
     }

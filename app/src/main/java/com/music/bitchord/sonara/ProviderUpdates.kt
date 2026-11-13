@@ -66,6 +66,29 @@ object ProviderUpdates {
         }.getOrElse { Check.Failed("Check failed: ${it.message ?: "no connection"}") }
     }
 
+    /** Everything in the manifest that is newer than what is installed, or a failure message. */
+    suspend fun checkAll(): Pair<List<Offer>, String?> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder().url(MANIFEST_URL).header("Cache-Control", "no-cache").build()
+            val body = Http.client.newCall(request).execute().use { if (it.isSuccessful) it.body?.string() else null }
+                ?: return@runCatching emptyList<Offer>() to "Couldn't reach the update server."
+            val components = json.parseToJsonElement(body).jsonObject["components"]?.jsonObject
+                ?: return@runCatching emptyList<Offer>() to "No update information found."
+            val offers = components.mapNotNull { (name, value) ->
+                val entry = value as? JsonObject ?: return@mapNotNull null
+                val latest = entry["version"]?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: return@mapNotNull null
+                if (latest > ProviderConfig.versionOf(name)) {
+                    Offer(name, latest, entry["notes"]?.jsonPrimitive?.contentOrNull.orEmpty(), entry)
+                } else null
+            }
+            offers to null
+        }.getOrElse { emptyList<Offer>() to "Check failed: ${it.message ?: "no connection"}" }
+    }
+
+    /** Installs every offer. Returns how many were installed. */
+    suspend fun installAll(context: Context, offers: List<Offer>): Int =
+        offers.count { install(context, it) }
+
     /** Saves [offer] on the phone and applies it now. */
     suspend fun install(context: Context, offer: Offer): Boolean = withContext(Dispatchers.IO) {
         runCatching {

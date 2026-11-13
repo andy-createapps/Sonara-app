@@ -43,22 +43,32 @@ object ComponentUpdates {
         if (up == 2) "All lyrics sources are answering." else "$up of 2 lyrics sources answering."
     }
 
+    suspend fun listenTogetherAnswering(): String = withContext(Dispatchers.IO) {
+        val probe = runCatching {
+            com.music.bitchord.data.listentogether.ListenTogether
+                .probeHealthWithLatency(com.music.bitchord.data.listentogether.ListenTogether.defaultServer, 8_000L)
+        }.getOrNull()
+        if (probe?.isOnline == true) "Listen Together is answering." else "Listen Together isn't answering right now."
+    }
+
     suspend fun spotifyAnswering(): String = withContext(Dispatchers.IO) {
         if (answering("https://open.spotify.com/")) "Spotify is answering." else "Spotify isn't answering right now."
     }
 }
 
 /**
- * The "Components" group in Settings. Each part is checked on its own and, when
- * an update exists, installed from the same row: tap once to check, tap again to
- * install.
+ * The "Components" group in Settings. One row checks every part that can change
+ * on its own (music and search sources, lyrics, Spotify import, Listen Together)
+ * and, when updates exist, installs them all from the same row: tap to check,
+ * tap again to install. The app itself has its own row, because only that one
+ * replaces the whole app.
  */
 @Composable
 fun ComponentUpdateRows() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf(mapOf<String, String>()) }
-    var offers by remember { mutableStateOf(mapOf<String, ProviderUpdates.Offer>()) }
+    var offers by remember { mutableStateOf(listOf<ProviderUpdates.Offer>()) }
     var busy by remember { mutableStateOf<String?>(null) }
 
     fun say(key: String, text: String) { status = status + (key to text) }
@@ -69,44 +79,46 @@ fun ComponentUpdateRows() {
         scope.launch { job(); busy = null }
     }
 
-    fun subtitle(key: String): String =
-        if (busy == key) "Working…" else status[key] ?: "Tap to check for updates"
-
-    // One row per part that can be updated with a few values: check, then install.
-    fun providerRow(key: String, extra: suspend () -> String) {
-        val offer = offers[key]
-        launchJob(key) {
-            if (offer != null) {
-                val ok = ProviderUpdates.install(context, offer)
-                if (ok) {
-                    offers = offers - key
-                    say(key, "Installed update v${offer.version}. It is active now.")
-                } else {
-                    say(key, "Couldn't install the update. Try again.")
-                }
-            } else {
-                when (val result = ProviderUpdates.check(key)) {
-                    is ProviderUpdates.Check.Available -> {
-                        offers = offers + (key to result.offer)
-                        val note = result.offer.notes.takeIf { it.isNotBlank() }?.let { " $it" }.orEmpty()
-                        say(key, "Update v${result.offer.version} available.$note Tap to install.")
-                    }
-                    is ProviderUpdates.Check.UpToDate -> say(key, "Up to date (v${result.version}). ${extra()}")
-                    is ProviderUpdates.Check.Failed -> say(key, result.message)
-                }
-            }
-        }
-    }
+    fun subtitle(key: String, idle: String): String =
+        if (busy == key) "Working…" else status[key] ?: idle
 
     SettingsGroup(
         header = "Components",
-        footer = "Each part updates on its own. Sonara never updates unless you tap here.",
+        footer = "Providers update on their own, without a new app. Sonara never updates unless you tap here.",
     ) {
         Column {
             SettingsRow(
+                icon = SfIcons.Cloud,
+                title = if (offers.isNotEmpty()) "Install provider updates" else "Check for provider updates",
+                subtitle = subtitle("providers", "Music, search, lyrics, Spotify and Listen Together"),
+                onClick = {
+                    launchJob("providers") {
+                        if (offers.isNotEmpty()) {
+                            val done = ProviderUpdates.installAll(context, offers)
+                            offers = emptyList()
+                            say("providers", if (done > 0) "Installed $done update${if (done == 1) "" else "s"}. They are active now." else "Couldn't install the updates. Try again.")
+                        } else {
+                            val (found, failure) = ProviderUpdates.checkAll()
+                            val addons = ComponentUpdates.refreshAddons()
+                            val lyrics = ComponentUpdates.lyricsAnswering()
+                            val spotify = ComponentUpdates.spotifyAnswering()
+                            val party = ComponentUpdates.listenTogetherAnswering()
+                            if (found.isNotEmpty()) {
+                                offers = found
+                                val names = found.joinToString(", ") { it.component }
+                                say("providers", "Updates available for $names. Tap to install.")
+                            } else {
+                                say("providers", (failure ?: "Everything is up to date.") + "\n$addons $lyrics $spotify $party")
+                            }
+                        }
+                    }
+                },
+            )
+            RowDivider()
+            SettingsRow(
                 icon = SfIcons.Download,
                 title = "Sonara app",
-                subtitle = subtitle("app"),
+                subtitle = subtitle("app", "Tap to check for a new version"),
                 onClick = {
                     launchJob("app") {
                         AppUpdateChecker.check()
@@ -118,27 +130,6 @@ fun ComponentUpdateRows() {
                         )
                     }
                 },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = SfIcons.Cloud,
-                title = "Sources and addons",
-                subtitle = subtitle("addons"),
-                onClick = { launchJob("addons") { say("addons", ComponentUpdates.refreshAddons()) } },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = SfIcons.MusicNote,
-                title = "Lyrics",
-                subtitle = subtitle("lyrics"),
-                onClick = { providerRow("lyrics") { ComponentUpdates.lyricsAnswering() } },
-            )
-            RowDivider()
-            SettingsRow(
-                icon = SfIcons.Info,
-                title = "Spotify import",
-                subtitle = subtitle("spotify"),
-                onClick = { providerRow("spotify") { ComponentUpdates.spotifyAnswering() } },
             )
         }
     }

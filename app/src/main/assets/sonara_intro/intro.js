@@ -4,7 +4,8 @@
 const P = new URLSearchParams(location.search);
 const EDITION = P.get('edition') === 'camellia' ? 'camellia' : 'andy';
 const MODE = P.get('mode') || 'run';
-const STEPS = window.SONARA_STEPS[EDITION];
+const EGG = MODE === 'egg';
+const STEPS = EGG ? window.SONARA_EGG : window.SONARA_STEPS[EDITION];
 const ASK = window.SONARA_ASK[EDITION];
 const $ = (s, r = document) => r.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -74,7 +75,7 @@ const fadeOut = (el, ms = 450) => { if (!el) return Promise.resolve(); el.style.
 
 async function runWelcome() {
   if ($('#welcome')) return; cancelled = false;
-    const root = document.createElement('div'); root.id = 'welcome'; root.className = 'wl-intro';
+    const root = document.createElement('div'); root.id = 'welcome'; root.className = 'wl-intro' + (EGG ? ' egg' : '');
   root.innerHTML = `<div class="wl-bg"><i></i><i></i><i></i></div><div class="wl-logo wl-fade" id="wl-logo">${LOGO}<span>Sonara</span></div>
     <div class="wl-stage"><div class="wl-art wl-fade" id="wl-art"><div class="wl-glow"></div><div class="wl-cover" style="background-image:url('cover.jpg')"></div></div>
     <div class="wl-np wl-fade" id="wl-np"><span class="wl-eq"><i></i><i></i><i></i><i></i></span><span>Dracula (JENNIE Remix) &bull; Tame Impala &times; JENNIE</span></div>
@@ -92,9 +93,9 @@ async function runWelcome() {
 
   // 1) the song fades in slowly (about nine seconds up to full volume)
   await sleep(900); if (skipped) return;
-  const musicOk = await startSong(() => {}); if (skipped) return;
-  beatLoop(root);
-  await sleep(musicOk ? 2600 : 800); if (skipped) return;
+  const musicOk = EGG ? false : await startSong(() => {}); if (skipped) return;
+  if (!EGG) beatLoop(root);
+  await sleep(EGG ? 300 : musicOk ? 2600 : 800); if (skipped) return;
 
   // 2) the cover art fades in, big, in the middle of the screen
   const renderStep = (i) => {
@@ -125,6 +126,10 @@ async function runWelcome() {
       }
     });
   };
+  if (EGG) {
+    fadeIn($('#wl-dots', root), null, 900); fadeIn($('#wl-logo', root), null, 900); fadeIn(sk, null, 900);
+    await sleep(400);
+  } else {
   // FLIP: measure where the cover will finally sit, then start it big in the centre of the screen
   const r = art.getBoundingClientRect(); const k = Math.min(innerWidth * 0.72, 300) / r.width;
   const dx = innerWidth / 2 - (r.left + r.width / 2), dy = innerHeight * 0.46 - (r.top + r.height / 2);
@@ -136,6 +141,7 @@ async function runWelcome() {
   await sleep(1500); if (skipped) return;
   fadeIn($('#wl-np', root), null, 900); fadeIn($('#wl-dots', root), null, 900); fadeIn($('#wl-logo', root), null, 900); fadeIn(sk, null, 900);
   await sleep(500);
+  }
   for (let i = 0; i < STEPS.length && !skipped; i++) {
     if (i > 0) { await fadeOut(card, 450); renderStep(i); void card.offsetWidth; card.classList.add('in'); }
     await showStep(i);

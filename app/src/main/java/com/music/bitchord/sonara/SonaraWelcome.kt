@@ -11,7 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -118,7 +118,7 @@ fun SonaraIntro(mode: String, onClose: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF07070C))
-            .systemBarsPadding(),
+            .navigationBarsPadding(),
     ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
