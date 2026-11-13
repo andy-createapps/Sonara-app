@@ -41,8 +41,11 @@ buildscript {
  * No "v" in the name — the in-app updater reads it as a number; the "v" is the
  * release tag's alone.
  */
-extra["bitchordVersionCode"] = 39
-extra["bitchordVersionName"] = "1.9.1"
+// Sonara numbers its own builds: the CI run number is passed in with -PsonaraBuild=N, so every
+// build is newer than the last and the in-app updater can tell. A local build is number 0.
+val sonaraBuild = (findProperty("sonaraBuild") as String?)?.toIntOrNull() ?: 0
+extra["bitchordVersionCode"] = 1000 + sonaraBuild
+extra["bitchordVersionName"] = "1.0.$sonaraBuild"
 
 /*
  * Bump this by hand before cutting each sideloaded test build ("beta2",
